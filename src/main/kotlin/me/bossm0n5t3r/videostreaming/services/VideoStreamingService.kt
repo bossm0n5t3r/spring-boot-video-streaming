@@ -27,21 +27,20 @@ class VideoStreamingService {
     ): ResponseEntity<ByteArray> {
         return try {
             val fileKey = "$fileName.$fileType"
-            var rangeStart = 0L
-            var rangeEnd = CHUNK_SIZE
             val fileSize = getFileSize(fileKey)
             if (httpRangeList == null) {
                 return ResponseEntity
                     .status(HttpStatus.PARTIAL_CONTENT)
                     .header(HttpHeaders.CONTENT_TYPE, VIDEO_CONTENT + fileType)
                     .header(HttpHeaders.ACCEPT_RANGES, BYTES)
-                    .header(HttpHeaders.CONTENT_RANGE, "$BYTES 0-$rangeEnd/$fileSize")
+                    .header(HttpHeaders.CONTENT_RANGE, "$BYTES 0-$CHUNK_SIZE/$fileSize")
                     .header(HttpHeaders.CONTENT_LENGTH, fileSize.toString())
-                    .body(readByteRange(fileKey, rangeStart, rangeEnd)) // Read the object and convert it as bytes
+                    .body(readByteRange(fileKey, 0, CHUNK_SIZE)) // Read the object and convert it as bytes
             }
+
             val ranges = httpRangeList.split("-").dropLastWhile { it.isEmpty() }.toTypedArray()
-            rangeStart = ranges[0].substring(6).toLong()
-            rangeEnd =
+            val rangeStart = ranges[0].substring(6).toLong()
+            var rangeEnd =
                 if (ranges.size > 1) {
                     ranges[1].toLong()
                 } else {
